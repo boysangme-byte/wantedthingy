@@ -1,0 +1,28 @@
+name: Wanted Auto Mailer
+on:
+  schedule:
+    - cron: "0 23 * * *"
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - uses: actions/cache@v4
+        with:
+          path: last_id.txt
+          key: last-id-cache
+      - run: python -m pip install -r requirements.txt
+      - run: python wanted_mailer_auto.py
+        env:
+          MY_EMAIL: ${{ secrets.MY_EMAIL }}
+          MY_PASSWORD: ${{ secrets.MY_PASSWORD }}
+      - if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: last_id.txt
+          key: last-id-cache
