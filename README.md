@@ -28,6 +28,13 @@ python wanted_mailer_auto.py
 
 성공 시 `last_id.txt`에 마지막 발송 공고 id가 저장되고, 다음 실행부터는 신규 공고만 전송됩니다.
 
+## 3-1) 웹 UI 실행(선택)
+```bash
+pip install -r requirements.txt
+python app.py
+```
+브라우저에서 `http://localhost:5000` 접속 → 설정 저장, 미리보기, 바로 보내기 버튼 사용.
+
 ## 4) Windows 작업 스케줄러 등록
 1. 작업 스케줄러 열기 → 작업 만들기
 2. 일반: 사용자 로그온 여부와 관계없이 실행, 최고 권한 실행 체크 권장

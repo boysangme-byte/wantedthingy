@@ -145,38 +145,55 @@ def send_mail(to_email, content):
         print(f"❌ 메일 발송 실패: {exc}")
         raise
 
-# ===== 실행 =====
-if __name__ == "__main__":
-    conf = load_config()
+def run_mailer_once(conf: dict | None = None, preview: bool = False):
+    """조건에 맞는 신규 공고를 수집하여 미리보기 HTML과 상태를 반환.
+
+    preview=True면 메일 발송/last_id 저장 없이 HTML만 생성해 반환합니다.
+    반환값: { 'new_count': int, 'latest_id': str|None, 'html': str|None }
+    """
+    if conf is None:
+        conf = load_config()
     print(f"🎯 조건: 지역={conf['locations']} | 직무={conf['jobs']} | 경력≥{conf['years']}년")
 
     all_jobs = fetch_all_jobs(max_pages=30)
     jobs = filter_jobs(all_jobs, conf)
     if not jobs:
         print("❌ 조건에 맞는 공고 없음")
-        exit()
+        return {"new_count": 0, "latest_id": None, "html": None}
 
     last_id = get_last_id()
-    latest_id = str(jobs[0]["id"])
+    latest_id = str(jobs[0]["id"]) if jobs else None
 
-    # 새 공고 판단
     if last_id == latest_id:
         print("📭 새 공고 없음 — 메일 생략")
-        exit()
+        return {"new_count": 0, "latest_id": latest_id, "html": None}
 
     new_jobs = []
     for job in jobs:
-        # 정렬을 보강했으므로 첫 등장 이전까지가 신규
         if last_id is not None and str(job.get("id")) == last_id:
             break
         new_jobs.append(job)
 
-    if new_jobs:
-        html = build_email(new_jobs)
-        try:
-            send_mail(conf["email"], html)
-            save_last_id(latest_id)
-        except Exception:
-            print("⚠️ 메일 발송 또는 저장 단계에서 오류가 발생했습니다.")
-    else:
+    if not new_jobs:
         print("📭 새 공고 없음")
+        return {"new_count": 0, "latest_id": latest_id, "html": None}
+
+    html = build_email(new_jobs)
+
+    if preview:
+        # 미리보기만 반환
+        return {"new_count": len(new_jobs), "latest_id": latest_id, "html": html}
+
+    try:
+        send_mail(conf["email"], html)
+        if latest_id is not None:
+            save_last_id(latest_id)
+        return {"new_count": len(new_jobs), "latest_id": latest_id, "html": html}
+    except Exception:
+        print("⚠️ 메일 발송 또는 저장 단계에서 오류가 발생했습니다.")
+        return {"new_count": 0, "latest_id": latest_id, "html": None}
+
+
+# ===== 실행 =====
+if __name__ == "__main__":
+    run_mailer_once()
