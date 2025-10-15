@@ -1,7 +1,7 @@
 name: Wanted Auto Mailer
 on:
   schedule:
-    - cron: "0 23 * * *"
+   - cron: "28 8 * * *"   # KST 17:28 (UTC 08:28)
   workflow_dispatch:
 
 jobs:
